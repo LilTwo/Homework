@@ -1,18 +1,28 @@
-from django.shortcuts import render
 from django.http import JsonResponse
-from common.decorate import api_json
-from .models import Article
-from common.orm2json import object_to_json
-from django.db import connection
-from django.core.cache import cache
 from django.shortcuts import render
+from .models import *
+from .serializers import *
+from rest_framework import viewsets
 
-PAGE_SIZE = 10
-
+class NewsViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows users to be viewed or edited.
+    """
+    queryset = News.objects.all()
+    serializer_class = NewsSerializer
 
 def homepage(request):
-    return render(request, "homepage.html", {"title": "title1"})
+    try:
+        latest_time = Latest.objects.all()[0].latest_news.post_time.replace(tzinfo=None)
+        update_news(latest_time)
+        return render(request, "homepage.html", {"all_news":News.objects.all()})
+    except Exception as e:
+        print(e)
 
 
 def content(request):
-    pass
+    print("content")
+    _id = request.GET['id']
+    content = News.objects.filter(id=_id)[0].content
+    print(content)
+    return JsonResponse({"content":content})
